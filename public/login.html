@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Eleva Academy</title>
+  <link rel="stylesheet" href="eleva.css">
+  <style>
+
+
+
+#loginError {
+  color: #ffb3b3;
+}  </style>
+</head>
+<body >
+  <div class="signup-container">
+    <h2 style=>Login</h2>
+    <form id="loginForm">
+      <label >Username</label>
+      <input type="text" id="loginUsername" placeholder="Enter username" required>
+
+      <label >Password</label>
+      <input type="password" id="loginPassword" placeholder="Enter your password" required>
+
+      <button type="submit">Login</button>
+      <div id="loginError" style="color:red;margin-top:6px;"></div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const errorP = document.getElementById("loginError");
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+
+      const username = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        const res = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.href = "/dashboard";
+        } else {
+          errorP.textContent = "Invalid username or password";
+        }
+      } catch (err) {
+        errorP.textContent = "Server error, try again later";
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

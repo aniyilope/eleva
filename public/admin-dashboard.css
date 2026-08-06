@@ -1,0 +1,437 @@
+* {
+
+    margin:0;
+
+    padding:0;
+
+    box-sizing:border-box;
+
+    font-family:"Inter", Arial, sans-serif;
+
+}
+
+
+
+body {
+
+    min-height:100vh;
+
+    display:flex;
+
+    background:#f8fafc;
+
+    color:#0f172a;
+
+}
+
+.sidebar {
+
+
+    width:260px;
+
+
+    background:#0f172a;
+
+
+    color:white;
+
+
+    min-height:100vh;
+
+
+    padding:30px 20px;
+
+
+}
+
+
+
+.logo {
+
+
+    font-size:28px;
+
+    font-weight:800;
+
+    color:#38bdf8;
+
+    margin-bottom:40px;
+
+
+}
+
+
+
+.sidebar ul {
+
+
+    list-style:none;
+
+
+}
+
+
+
+.sidebar li {
+
+
+    padding:15px;
+
+    margin-bottom:10px;
+
+
+    border-radius:10px;
+
+
+    cursor:pointer;
+
+
+    transition:.3s;
+
+
+}
+
+
+
+.sidebar li:hover {
+
+
+    background:#2563eb;
+
+
+}
+
+
+
+.dashboard {
+
+
+    flex:1;
+
+
+    padding:40px;
+
+
+}
+
+
+
+
+.dashboard header h1 {
+
+
+    font-size:35px;
+
+
+    color:#0f172a;
+
+
+}
+
+
+
+.dashboard header p {
+
+
+    color:#64748b;
+
+    margin-top:8px;
+
+
+}
+
+
+.stats {
+
+
+    margin-top:35px;
+
+
+    display:grid;
+
+
+    grid-template-columns:
+
+    repeat(3,1fr);
+
+
+    gap:25px;
+
+
+}
+
+
+
+.card {
+
+
+    background:white;
+
+
+    padding:30px;
+
+
+    border-radius:18px;
+
+
+    box-shadow:
+
+    0 10px 30px rgba(0,0,0,.08);
+
+
+}
+
+
+
+.card h3 {
+
+
+    color:#64748b;
+
+
+    margin-bottom:15px;
+
+
+}
+
+
+
+.card span {
+
+
+    font-size:35px;
+
+
+    font-weight:800;
+
+
+    color:#2563eb;
+
+
+}
+
+.applications {
+
+
+    margin-top:40px;
+
+
+    background:white;
+
+
+    padding:30px;
+
+
+    border-radius:20px;
+
+
+    box-shadow:
+
+    0 10px 30px rgba(0,0,0,.08);
+
+
+}
+
+
+
+.applications h2 {
+
+
+    margin-bottom:25px;
+
+
+}
+
+
+
+
+
+
+table {
+
+
+    width:100%;
+
+
+    border-collapse:collapse;
+
+
+}
+
+
+
+
+thead {
+
+
+    background:#eff6ff;
+
+
+}
+
+
+
+
+th {
+
+
+    padding:15px;
+
+
+    text-align:left;
+
+
+    color:#2563eb;
+
+
+}
+
+
+
+td {
+
+
+    padding:15px;
+
+
+    border-bottom:
+
+    1px solid #e2e8f0;
+
+
+}
+
+
+
+.approve-btn {
+
+
+    background:#16a34a;
+
+
+    color:white;
+
+
+    border:none;
+
+
+    padding:10px 15px;
+
+
+    border-radius:8px;
+
+
+    cursor:pointer;
+
+
+}
+
+
+
+.reject-btn {
+
+
+    background:#dc2626;
+
+
+    color:white;
+
+
+    border:none;
+
+
+    padding:10px 15px;
+
+
+    border-radius:8px;
+
+
+    cursor:pointer;
+
+
+}
+
+
+
+.approve-btn:hover {
+
+
+    background:#15803d;
+
+
+}
+
+
+
+.reject-btn:hover {
+
+
+    background:#b91c1c;
+
+
+}
+
+@media(max-width:900px){
+
+
+
+body {
+
+
+    flex-direction:column;
+
+
+}
+
+
+
+.sidebar {
+
+
+    width:100%;
+
+
+    min-height:auto;
+
+
+}
+
+.stats {
+
+
+    grid-template-columns:1fr;
+
+
+}
+
+.dashboard {
+
+
+    padding:20px;
+
+
+}
+
+
+
+.applications {
+
+
+    overflow-x:auto;
+
+
+}
+
+
+
+table {
+
+
+    min-width:700px;
+
+
+}
+
+
+}
+

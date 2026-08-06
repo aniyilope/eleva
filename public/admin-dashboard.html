@@ -1,0 +1,267 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Eleva | Admin Dashboard</title>
+
+<link rel="stylesheet" href="admin-dashboard.css">
+
+</head>
+
+
+<body>
+
+
+
+<aside class="sidebar">
+
+
+    <div class="logo">
+        Eleva Admin
+    </div>
+
+
+    <ul>
+
+        <li>
+            Dashboard
+        </li>
+
+        <li>
+            Students
+        </li>
+
+        <li>
+            Courses
+        </li>
+
+        <li>
+            Applications
+        </li>
+
+
+        <li>
+            Logout
+        </li>
+
+
+    </ul>
+
+
+</aside>
+
+<main class="dashboard">
+
+
+<header>
+
+
+<h1>
+Pending Applications
+</h1>
+
+
+<p>
+Review and manage new student enrollments.
+</p>
+
+
+</header>
+
+
+
+
+
+
+
+<!-- STAT CARDS -->
+
+
+<section class="stats">
+
+
+<div class="card">
+
+<h3>
+Pending
+</h3>
+
+<span id="pendingCount">
+0
+</span>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+Approved
+</h3>
+
+<span>
+0
+</span>
+
+</div>
+
+
+
+
+<div class="card">
+
+<h3>
+Rejected
+</h3>
+
+<span>
+0
+</span>
+
+</div>
+
+
+</section>
+
+
+<section class="applications">
+
+
+<h2>
+Student Applications
+</h2>
+
+
+
+<table>
+
+
+<thead>
+
+
+<tr>
+
+<th>
+Name
+</th>
+
+
+<th>
+Email
+</th>
+
+
+<th>
+Course
+</th>
+
+
+<th>
+Mode
+</th>
+
+
+<th>
+Status
+</th>
+
+
+<th>
+Action
+</th>
+
+
+</tr>
+
+
+</thead>
+
+
+
+
+
+<tbody id="applicationTable">
+
+
+</tbody>
+
+
+</table>
+
+
+
+</section>
+
+
+<section class="applications">
+
+
+<h2>
+Assign Students to Teachers
+</h2>
+
+
+<table>
+
+
+<thead>
+
+
+<tr>
+
+<th>
+Student
+</th>
+
+
+<th>
+Current Teacher
+</th>
+
+
+<th>
+Assign
+</th>
+
+
+</tr>
+
+
+</thead>
+
+
+<tbody id="rosterTable">
+
+
+</tbody>
+
+
+</table>
+
+
+</section>
+
+
+
+
+</main>
+
+
+
+
+
+
+<script src="./admin-dashboard.js"></script>
+
+
+</body>
+
+</html>
+

@@ -1,0 +1,152 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./eleva.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Eleva</title>
+</head>
+<body class="container">
+    <div class="mon">
+    <Nav>
+        <div class="first">
+        <H1 >Eleva</H1>
+        <p>Learn. Grow. Succeed. ⭐</p>
+        </div>
+
+        <div>
+            
+        <a href="./eleva.html">Home</a>
+     <a href="#About">About us</a>
+        <a href="liveclass.html" id="ElevaLive" style="display:none;">ElevaLive</a>
+        <div class="dropdown">
+                  <p class="second">Courses ▼</p>
+                  <div class="dropdown-content">
+                   <a href="./cyber.html">Cyber Security</a>
+                   <a href="./Graphics.html">Graphics</a>
+                   <a href="./program.html">Programming</a>
+        </div>
+        </div>
+        <a href="#footer">Contact</a>
+        <a href="./login.html" ><button type="button" id="authBtn" class="login" target="_blank"  >Login</button></a>
+        </div>
+
+    </Nav>
+    </div>
+    <div class="coo">
+      <h1>Get the best online courses</h1>
+      <p>We offer the best tech courses around the world</p>
+    </div>
+    
+<div class="carousel" id="About">
+  <div class="carousel-item">
+    <h2>🎓 About Us</h2>
+    <p>We are Eleva Academy, empowering students with modern digital skills in a fun and creative environment.</p>
+  </div>
+
+  <div class="carousel-item">
+    <h2>👩‍🏫 Our Teachers</h2>
+    <p>Our teachers are experienced, friendly, and love making learning exciting and practical for students.</p>
+  </div>
+
+  <div class="carousel-item">
+    <h2>💻 Programming Courses</h2>
+    <p>Learn Python, Web Development, Java, and more — from beginner to advanced levels.</p>
+  </div>
+
+  <div class="carousel-item">
+    <h2>🎨 Graphics & Multimedia</h2>
+    <p>Explore creativity with Photoshop, CorelDraw, UI/UX, Video Editing, Animation, and more.</p>
+  </div>
+
+  <div class="carousel-item">
+    <h2>🛡️ Cyber Security</h2>
+    <p>Learn ethical hacking, network security, digital forensics, and protect your digital world.</p>
+  </div>
+</div>
+
+
+  <!-- Navigation Dots -->
+  <div class="dots">
+    <label for="slide1"></label>
+    <label for="slide2"></label>
+    <label for="slide3"></label>
+  </div>
+
+  <div class="signup-container" id="Apply">
+<a href="./enroll.html"> <button type="submit">Enroll</button>
+</a>  
+</form>
+</div>
+
+
+</div>
+<footer class="footer" id="footer">
+  <div class="footer-container">
+
+    <div class="footer-section">
+      <h1>Eleva Academy</h1>
+      <p>Empowering young minds with skills in Tech, Multimedia, Graphics, Cyber Security, and Programming.</p>
+    </div>
+
+    <div class="footer-section">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">Courses</a></li>
+        <li><a href="#">Teachers</a></li>
+        <li><a href="#">Enroll Now</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-section">
+      <h4>Follow Us</h4>
+      <div class="social-links">
+        <a href="#">🌐</a>
+        <a href="#">📘</a>
+        <a href="#">📸</a>
+        <a href="#">▶️</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>© 2025 Eleva Academy | All Rights Reserved</p>
+  </div>
+</footer>
+
+
+
+<script>
+  const authBtn = document.getElementById('authBtn');
+  const liveSection = document.getElementById('ElevaLive');
+
+  const loggedIn = localStorage.getItem('loggedIn');
+
+  if (loggedIn) {
+    // User is logged in → show AppTech Live
+    liveSection.style.display = 'block';
+
+    // Change button to Logout
+    authBtn.innerText = 'Logout';
+    authBtn.onclick = () => {
+      localStorage.removeItem('loggedIn');
+      localStorage.removeItem('username');
+      window.location.reload(); // reload landing page
+    };
+    
+    // Remove the <a> href so logout doesn't navigate
+    authBtn.parentElement.removeAttribute('href');
+
+  } else {
+    // User not logged in → hide AppTech Live
+    liveSection.style.display = 'none';
+
+    // Ensure button shows Login and navigates correctly
+    authBtn.innerText = 'Login';
+    authBtn.parentElement.setAttribute('href', './login.html');
+  }
+</script>
+
+</body>
+</html>

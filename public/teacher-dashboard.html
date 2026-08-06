@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teacher Dashboard</title>
+<link rel="stylesheet" href="./live/dashboard.css">  
+<script src="/socket.io/socket.io.js"></script>
+  <script src="./live/teacher-dashboard.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="logo">Eleva - Teacher</div>
+    <div class="user-info">
+      <span id="username"></span>
+      <button id="themeToggle">Dark</button>
+      <span id="liveStatus" class="live-status offline">Offline</span>
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <aside class="sidebar">
+    <ul>
+      <li><a href="#" data-section="home">Dashboard Home</a></li>
+      <li><a href="#" data-section="courses">Courses</a></li>
+      <li><a href="#" data-section="assignments">Assignments</a></li>
+      <li><a href="#" data-section="students">Students</a></li>
+      <li><a href="./live/teacher.html" target="_blank" data-section="live">Live Classes</a></li>
+      <li><a href="#" data-section="announcements">Announcements</a></li>
+    </ul>
+  </aside>
+
+  <main id="main-content"></main>
+
+
+   <script>
+  window.addEventListener("DOMContentLoaded", async () => {
+    // Check session
+    const res = await fetch("/session");
+    const data = await res.json();
+
+    if (!data.loggedIn || data.user.role !== "teacher") {
+      window.location.href = "/";
+      return;
+    }
+
+    // Set username
+    document.getElementById("username").textContent = data.user.username;
+  });
+
+  // Logout
+  const logoutBtn = document.getElementById("logoutBtn");
+  logoutBtn.addEventListener("click", async () => {
+    await fetch("/logout", { method: "POST" });
+    window.location.href = "/eleva.html";
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student — Live Class</title>
+<link rel="stylesheet" href="./live.css">
+<script src="https://cdn.jsdelivr.net/npm/qrious/dist/qrious.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="./live.js" defer></script>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <a href="../student-dashboard.html"><div class="logo">ElevaLive</div></a>
+    <div>Live Class</div>
+  </div>
+  <div class="header-actions">
+    <div class="pill" id="liveStatus">Not Live</div>
+    <span id="waitingNotice" style="margin-left:10px;color:#f59e0b;display:none;">Waiting for teacher approval...</span>
+  </div>
+</header>
+
+<div class="container">
+  <section class="left">
+    <!-- Whiteboard & Code -->
+    <div class="whiteboard-card">
+      <div class="wb-top">
+        <div>Board / Code</div>
+      </div>
+      <canvas id="wbCanvas" class="wb-canvas"></canvas>
+      <textarea id="codeArea" placeholder="// Type your code here..." disabled></textarea>
+      <div class="meta-row">
+        <div id="currentTool">Tool: Pen</div>
+        <div>Color: <span id="colorPreview"></span></div>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-card">
+      <div>Class Chat</div>
+      <div id="chatBox" class="chat-box"></div>
+      <div class="chat-input">
+        <input id="chatInput" placeholder="Type message..." />
+        <button id="btnSendChat">Send</button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="right">
+    <!-- Teacher Video -->
+    <div class="teacher-card">
+      <div>Teacher Video</div>
+      <div class="teacher-video">
+        <video id="teacherVideo" autoplay playsinline></video>
+      </div>
+    </div>
+
+    <!-- Student Camera -->
+    <div class="teacher-card">
+      <div>Your Camera</div>
+      <div class="teacher-video">
+        <video id="studentVideo" autoplay muted playsinline></video>
+      </div>
+      <div class="teacher-controls">
+        <button class="btn" id="btnCamToggle">Toggle Video</button>
+        <button class="btn" id="btnMicToggle">Toggle Mic</button>
+      </div>
+    </div>
+
+    <!-- Participants -->
+    <div class="participants-card">
+      <div>Participants</div>
+      <div id="participantsList" class="participants-list"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+
+window.addEventListener("DOMContentLoaded",async()=>{
+
+
+const res=await fetch("/session");
+
+const data=await res.json();
+
+
+
+if(!data.loggedIn || data.user.role!=="student"){
+
+alert("Access denied");
+
+return location.href="/dashboard";
+
+}
+
+
+
+const username=data.user.username;
+
+const role=data.user.role;
+
+const userId=data.user._id;
+
+
+
+initLiveCore(
+role,
+username,
+userId
+);
+
+let admitted=false;
+
+// SHOW WAITING
+
+document.getElementById(
+"waitingNotice"
+).style.display="inline";
+
+
+// CLASS STATUS
+
+
+socket.on("class-status",live=>{
+
+
+document.getElementById(
+"liveStatus"
+).innerText=
+live?"Live":"Not Live";
+
+
+});
+
+// STUDENT ADMITTED
+
+
+socket.on(
+"admitted",
+async(data)=>{
+
+
+admitted=true;
+
+
+
+document.getElementById(
+"waitingNotice"
+).style.display="none";
+
+
+
+const video=
+document.getElementById(
+"studentVideo"
+);
+
+
+
+try{
+
+
+const stream=
+await navigator.mediaDevices.getUserMedia({
+
+video:true,
+
+audio:true
+
+});
+
+
+
+video.srcObject=stream;
+
+
+
+startWebRTC(
+data.socketId,
+stream
+);
+
+
+
+}catch(err){
+
+console.log(
+"Camera error",
+err
+);
+
+
+}
+
+
+
+});
+
+
+// WHITEBOARD
+
+
+socket.on(
+"code-update",
+code=>{
+
+
+if(admitted){
+
+document.getElementById(
+"codeArea"
+).value=code;
+
+}
+
+
+});
+
+socket.on(
+"draw",
+data=>{
+
+
+if(admitted){
+
+drawLine(
+data.x1,
+data.y1,
+data.x2,
+data.y2,
+data.color,
+data.size,
+false
+);
+
+}
+
+
+});
+
+
+socket.on(
+"clear-all",
+()=>{
+
+
+if(admitted){
+
+clearCanvas();
+
+}
+
+
+});
+
+// CHAT
+
+
+socket.on(
+"chat",
+data=>{
+
+
+const div=
+document.createElement("div");
+
+
+div.className=
+"msg "+data.role;
+
+
+div.textContent=
+`${data.name}: ${data.message}`;
+
+
+
+document.getElementById(
+"chatBox"
+)
+.appendChild(div);
+
+
+
+});
+
+
+document.getElementById(
+"btnSendChat"
+).onclick=()=>{
+
+
+const input=
+document.getElementById(
+"chatInput"
+);
+
+
+
+const msg=input.value.trim();
+
+
+
+if(!msg)return;
+
+
+
+socket.emit(
+"chat",
+{
+name:username,
+role:role,
+message:msg
+}
+);
+
+
+
+input.value="";
+
+
+};
+
+// PARTICIPANTS
+
+
+socket.on(
+"participants",
+list=>{
+
+
+const box=
+document.getElementById(
+"participantsList"
+);
+
+
+
+box.innerHTML="";
+
+
+
+list.forEach(p=>{
+
+
+const div=
+document.createElement("div");
+
+
+div.textContent=
+`${p.name} (${p.role})`;
+
+
+
+box.appendChild(div);
+
+});
+
+});
+
+// CAMERA BUTTON
+
+
+document.getElementById(
+"btnCamToggle"
+).onclick=async()=>{
+
+
+const video=
+document.getElementById(
+"studentVideo"
+);
+
+
+
+if(!video.srcObject){
+
+
+const stream=
+await navigator.mediaDevices.getUserMedia({
+
+video:true,
+
+audio:true
+
+});
+
+
+video.srcObject=stream;
+
+
+}
+
+
+else{
+
+
+video.srcObject
+.getTracks()
+.forEach(track=>{
+
+track.enabled=!track.enabled;
+
+});
+
+
+}
+
+};
+
+});
+
+</script>
+
+</body>
+</html>

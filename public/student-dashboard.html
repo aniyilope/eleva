@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Dashboard</title>
+  <link rel="stylesheet" href="./live/dashboard.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="./live/student-dashboard.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="logo">Eleva - Student</div>
+    <div class="user-info">
+      <span id="username"></span>
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <aside class="sidebar">
+    <ul>
+      <li><a href="#" data-section="home">Dashboard Home</a></li>
+      <li><a href="#" data-section="my-courses">My Courses</a></li>
+      <li><a href="#" data-section="assignments">Assignments</a></li>
+      <li><a href="./live/student.html" target="_blank" data-section="live">Join Live Classes</a></li>
+      <li><a href="#" data-section="announcements">Announcements</a></li>
+    </ul>
+  </aside>
+
+  <main id="main-content"></main>
+
+
+  <Script>
+    const logoutBtn = document.getElementById("logoutBtn");
+
+logoutBtn.addEventListener("click", async () => {
+  // Tell the server to destroy the session
+  await fetch("/logout", { method: "POST" });
+
+  // Redirect back to login page
+  window.location.href = "/";
+});
+
+  </Script>
+</body>
+</html>

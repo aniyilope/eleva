@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Class — Full Control</title>
+<style>
+:root{
+  --yellow:#FFD54F;
+  --orange:#FF8A33;
+  --red:#FF3B30;
+  --bg:#0f1720;
+  --panel:#0b1220;
+  --muted:#9aa4b2;
+  --white:#ffffff;
+  --card:#0e1520;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:white;
+  color:var(--white);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+a{
+  text-decoration: none;
+}
+/* HEADER */
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 20px;
+  background:linear-gradient(90deg,var(--orange),var(--red));
+}
+.brand{display:flex;gap:12px;align-items:center;}
+.logo{
+      font-size: 30px;    color:#111;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:6px;
+}
+.header-actions{display:flex;gap:8px;align-items:center;}
+.btn{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;color:#fff;font-weight:600;background:rgba(255,255,255,0.1);}
+.btn.primary{background:var(--red);}
+.btn.warn{background:var(--orange);}
+.pill{padding:4px 8px;border-radius:12px;background:rgba(0,0,0,0.2);font-size:13px;}
+
+/* CONTAINER */
+.container{
+  display:grid;
+  grid-template-columns:1fr 450px;
+  gap:12px;
+  padding:12px;
+  flex:1;
+  min-height:0;
+}
+
+/* LEFT - Whiteboard / Code Space */
+.left{display:flex;flex-direction:column;gap:12px;}
+.whiteboard-card{
+  background: linear-gradient(180deg,#071226 0%, #07182a 100%);
+  border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03);
+  box-shadow:0 6px 20px rgba(2,6,23,0.7);
+  display:flex;flex-direction:column;
+}
+.wb-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
+.color-swatch{
+  width:24px;height:24px;border-radius:4px;cursor:pointer;
+  border:2px solid rgba(255,255,255,0.1);
+}
+.color-swatch.selected{outline:2px solid var(--white);}
+.wb-canvas{
+  width:100%;
+  height:350px;
+  border-radius:6px;
+  background:#ffffff; /* Whiteboard is now white */
+  cursor:crosshair;
+  border:1px solid #ccc;
+}
+#codeArea{
+  width:100%;
+  height:350px;
+  border-radius:6px;
+  background:#0f1720;
+  color:#fff;
+  font-family:monospace;
+  padding:8px;
+  border:none;
+  display:none;
+  resize:none;
+}
+.meta-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:13px;color:var(--muted);}
+.wb-buttons{display:flex;gap:6px; flex-wrap: wrap;}
+
+/* RIGHT - Teacher, Chat, Participants */
+.right{display:flex;flex-direction:column;gap:12px;}
+
+/* TEACHER */
+.teacher-card{
+  background:var(--card);
+  border-radius:10px;
+  padding:10px;
+}
+.teacher-video{
+  width:100%;
+  height:200px;
+  background:#000;
+  border-radius:6px;
+  overflow:hidden;
+  position:relative;
+}
+.teacher-video video{width:100%;height:100%;object-fit:cover;}
+.teacher-badge{position:absolute;top:8px;left:8px;background:var(--yellow);color:#111;padding:4px 6px;border-radius:4px;font-weight:700;}
+.teacher-controls{display:flex;gap:6px;margin-top:6px;}
+
+
+/* CHAT */
+.chat-card{
+  background:var(--card);
+  border-radius:10px;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+}
+.chat-box{
+  flex:1;
+  max-height:200px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.msg{padding:6px 10px;border-radius:8px;max-width:80%;word-break:break-word;font-size:14px;}
+.msg.teacher{background:var(--yellow);color:#111;align-self:flex-start;font-weight:600;}
+.msg.student{background:rgba(255,255,255,0.05);align-self:flex-end;}
+.chat-input{display:flex;gap:6px;margin-top:6px;}
+.chat-input input{flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#fff;}
+.chat-send{background:var(--orange);border:none;padding:6px 10px;border-radius:6px;color:#111;font-weight:700;cursor:pointer;}
+
+/* PARTICIPANTS */
+.participants-card{
+  background:var(--card);
+  border-radius:10px;
+  padding:10px;
+}
+.participants-list{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  max-height:400px;
+  overflow:auto;
+}
+.participant{
+  background:rgba(255,255,255,0.05);
+  border-radius:6px;
+  padding:4px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.participant video{width:100%;height:140px;border-radius:4px;object-fit:cover;margin-bottom:4px;}
+.participant-name{font-size:13px;}
+.participant-controls{display:flex;gap:4px;margin-top:2px;}
+.participant-controls button{font-size:11px;padding:2px 4px;}
+/* Tablet Sharing Button */
+.control-btn,
+#startTablet {
+  background: linear-gradient(135deg, #FFD54F, #FF8A33);
+  color: #111;
+  font-weight: 700;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#startTablet:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+}
+
+#startTablet:active {
+  transform: scale(0.97);
+}
+
+/* Tablet status badge */
+#tabletStatus {
+  background: rgba(34,197,94,0.15);
+  color: #4ade80;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 10px;
+}
+
+#tabletQRContainer {
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .container{grid-template-columns:1fr;}
+  .right{order:2;}
+  .left{order:1;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <a href="./eleva.html">  <div class="logo">ElevaLive</div></a>
+    <div>
+      <div>Live Class</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="pill" id="liveStatus">Not Live</div>
+    <button class="btn primary" id="btnStartClass">Start Class</button>
+    <button class="btn warn" id="btnEndClass">End Class</button>
+  </div>
+</header>
+
+<div class="container">
+  <section class="left">
+    <div class="whiteboard-card">
+      <div class="wb-top">
+        <div>Interactive Board / Code Space</div>
+        <div class="wb-buttons">
+          <button class="btn" id="btnToggleBoard">Toggle Board/Text</button>
+          <div class="color-swatch selected" data-color="#FFD54F" style="background:#FFD54F"></div>
+          <div class="color-swatch" data-color="#FF8A33" style="background:#FF8A33"></div>
+          <div class="color-swatch" data-color="#FF3B30" style="background:#FF3B30"></div>
+          <div class="color-swatch" data-color="#000000" style="background:#000000"></div>
+          <div class="color-swatch" data-color="#0f15be" style="background:#0f15be"></div>
+          <div class="color-swatch" data-color="#05ba68" style="background:#05ba68"></div>
+          <input type="range" id="penSize" min="1" max="12" value="3">
+          <button class="btn" id="btnErase">Eraser</button>
+          <button class="btn" id="btnClear">Clear</button>
+          <button class="btn" id="btnShareWhiteboard">Share Board</button>
+          <button class="btn" id="btnUndo">Undo</button>
+          <button class="btn" id="btnRedo">Redo</button>
+          <button class="btn" id="btnSaveBoard">Save Whiteboard</button>
+          <button class="btn" id="btnSaveCode">Save Code</button>
+
+
+        </div>
+      </div>
+      <canvas id="wbCanvas" class="wb-canvas"></canvas>
+      <textarea id="codeArea" placeholder="// Type your code here..."></textarea>
+      <div class="meta-row">
+        <div id="currentTool">Tool: Pen</div>
+        <div>Color: <span id="colorPreview"></span></div>
+      </div>
+    </div>
+    <button id="startTablet" class="control-btn">
+  📱 Start Tablet Sharing
+</button>
+
+<span id="tabletStatus" style="margin-left:10px;color:#4ade80;display:none;">
+  Tablet Connected
+</span>
+<div id="tabletQRContainer" style="margin-top:10px; display:none; text-align:center;">
+  <p style="color:#111; font-weight:700;">Scan to connect tablet:</p>
+  <canvas id="tabletQR"></canvas>
+</div>
+
+
+  </section>
+
+  <aside class="right">
+    <div class="teacher-card">
+      <div>Teacher Camera</div>
+      <div class="teacher-video">
+        <div class="teacher-badge">HOST</div>
+        <video id="teacherVideo" autoplay muted playsinline></video>
+      </div>
+      <div id="camStatus"
+     style="position:absolute;bottom:8px;right:8px;
+     background:#22c55e;color:#111;
+     padding:3px 6px;border-radius:6px;
+     font-size:12px;display:none;">
+  Camera On
+</div>
+
+      <div class="teacher-controls">
+        <button class="btn" id="btnCamToggle">Toggle Video</button>
+        <button class="btn" id="btnMicToggle">Toggle Mic</button>
+        <button class="btn" id="btnScreenShare">Share Screen</button>
+      </div>
+    </div>
+
+    <div class="chat-card">
+      <div>Class Chat</div>
+      <div id="chatBox" class="chat-box"></div>
+      <div class="chat-input">
+        <input id="chatInput" placeholder="Type message...">
+        <button class="chat-send" id="sendBtn">Send</button>
+      </div>
+    </div>
+
+    <div class="participants-card">
+      <div>Participants</div>
+      <div id="participantsList" class="participants-list"></div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn primary" id="btnAddStudent">+ Add Student</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+  
+  
+  // Redirect to login if not logged in
+  if (!localStorage.getItem('loggedIn')) {
+    window.location.href = 'login.html';
+  }
+
+
+
+  // function logout() {
+  //   localStorage.removeItem('loggedIn');
+  //   localStorage.removeItem('username');
+  //   window.location.href = 'login.html';
+  // }
+
+
+  const role = localStorage.getItem('role');
+  if(role === 'student'){
+    document.getElementById('btnStartClass').style.display = 'none'; // hide start class for students
+  }
+</script>
+
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io(); // make sure port matches your server
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+let participants=[];
+let myRole=null;
+let myName='';
+let teacherStream=null;
+let screenStream=null;
+let whiteboardStream=null;
+let currentBoard='canvas';
+let canDraw = false;
+
+let classLive = false;
+
+let classStarted = false;
+
+
+const canvas = document.getElementById('wbCanvas');
+const ctx = canvas.getContext('2d');
+const codeArea = document.getElementById('codeArea');  // ✅ declare early
+const chatBox = document.getElementById('chatBox');
+const chatInput = document.getElementById('chatInput');
+const camStatus = document.getElementById('camStatus');
+
+socket.on("class-status", (status) => {
+  classStarted = status;
+
+  document.getElementById("liveStatus").innerText =
+    status ? "Live" : "Not Live";
+
+      if (status && myRole === "teacher" && !teacherStream) {
+    startLocalCameraPreview();
+  }
+  // Teacher can draw only when class is live
+
+  if (myRole === "teacher" ) {
+    canDraw = true;
+    codeArea.disabled = false;
+  } else {
+    canDraw = false;
+    codeArea.disabled = true;
+  }
+});
+
+codeArea.addEventListener("input", () => {
+  if (myRole !== "teacher") return;
+
+  socket.emit("code-update", codeArea.value);
+});
+
+socket.on("code-update", (code) => {
+  codeArea.value = code;
+});
+
+function setBoard(board) {
+  currentBoard = board;
+
+  if (board === "canvas") {
+    canvas.style.display = "block";
+    codeArea.style.display = "none";
+  } else {
+    canvas.style.display = "none";
+    codeArea.style.display = "block";
+  }
+}
+
+
+function initRole(){
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabletMode = urlParams.get("tablet") === "1";
+
+  if (tabletMode) {
+    myRole = "teacher";
+    myName = "Teacher (Tablet)";
+    startLocalCameraPreview();
+  } else {
+    const role = prompt("Are you the teacher? yes/no", "yes");
+    myRole = role.toLowerCase() === "yes" ? "teacher" : "student";
+    myName = myRole === "teacher"
+      ? prompt("Teacher Name", "Teacher")
+      : prompt("Student Name", "Student");
+  }
+
+  addParticipant(myName, myRole, null);
+}
+
+initRole();
+
+if (new URLSearchParams(window.location.search).get("tablet") === "1") {
+  document.getElementById("btnStartClass").disabled = true;
+  document.getElementById("btnStartClass").innerText = "Teacher Live";
+}
+
+
+// Add Participant
+function addParticipant(name,role,stream){
+  const list=document.getElementById('participantsList');
+  const div=document.createElement('div');
+  div.className='participant';
+  div.innerHTML=`<video ${role==='student'?'muted':''} autoplay playsinline></video>
+                 <div class="participant-name">${name}</div>
+                 <div class="participant-controls">
+                   <button class="btnVideoToggle">Video</button>
+                   <button class="btnMicToggle">Mic</button>
+                 </div>`;
+  const video=div.querySelector('video');
+  if(stream) video.srcObject=stream;
+  list.appendChild(div);
+  participants.push({name,role,stream,element:div,video});
+
+  div.querySelector('.btnVideoToggle').onclick=()=>{
+    if(stream) stream.getVideoTracks().forEach(t=>t.enabled=!t.enabled);
+  };
+  div.querySelector('.btnMicToggle').onclick=()=>{
+    if(stream) stream.getAudioTracks().forEach(t=>t.enabled=!t.enabled);
+  };
+}
+
+// Chat
+document.getElementById('sendBtn').onclick = () => {
+  const msg = chatInput.value.trim();
+  if (!msg) return;
+
+  socket.emit("chat", {
+    name: myName,
+    role: myRole,
+    message: msg
+  });
+
+  chatInput.value = "";
+};
+
+
+socket.on("chat", data => {
+  const div = document.createElement("div");
+  div.className = "msg " + (data.role === "teacher" ? "teacher" : "student");
+  div.innerText = data.name + ": " + data.message;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+
+
+// Start Class
+document.getElementById("btnStartClass").onclick = async () => {
+  if (myRole !== "teacher") {
+    return alert("Only the teacher can start the class");
+  }
+
+  try {
+    teacherStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
+
+    document.getElementById("teacherVideo").srcObject = teacherStream;
+
+    socket.emit("start-class"); //  THIS IS THE KEY
+
+    alert("Class started!");
+  } catch (err) {
+    alert("Camera Error: " + err.message);
+  }
+};
+
+
+
+// End Class
+document.getElementById('btnEndClass').onclick=()=>{
+    if (myRole !== "teacher") return;
+
+  if(teacherStream) teacherStream.getTracks().forEach(t=>t.stop());
+  if(screenStream) screenStream.getTracks().forEach(t=>t.stop());
+  if(whiteboardStream) whiteboardStream.getTracks().forEach(t=>t.stop());
+  document.getElementById('teacherVideo').srcObject=null;
+  document.getElementById('liveStatus').innerText='Not Live';
+  participants.filter(p=>p.role==='student').forEach(p=>{
+    if(p.stream) p.stream.getTracks().forEach(t=>t.stop());
+    p.element.remove();
+  });
+  alert("Class ended. Students have left.");
+};
+
+document.getElementById("camStatus").style.display = "block";
+
+// Camera / Mic
+document.getElementById('btnCamToggle').onclick = () => {
+  if (!teacherStream) return;
+  teacherStream.getVideoTracks().forEach(t => {
+    t.enabled = !t.enabled;
+    camStatus.style.display = t.enabled ? "block" : "none";
+  });
+};
+document.getElementById('btnMicToggle').onclick=()=>{if(teacherStream) teacherStream.getAudioTracks().forEach(t=>t.enabled=!t.enabled);}
+
+// Screen Share
+document.getElementById('btnScreenShare').onclick=async ()=>{
+  if(!teacherStream) return alert("Start class first");
+  let stream;
+  try{stream=await navigator.mediaDevices.getDisplayMedia({video:true});}
+  catch(err){return alert("Screen share error:"+err);}
+  const combined=new MediaStream([...stream.getVideoTracks(),...teacherStream.getAudioTracks()]);
+  document.getElementById('teacherVideo').srcObject=combined;
+  screenStream=stream;
+};
+
+let tabletEnabled = false;
+
+document.getElementById("startTablet").onclick = async () => {
+  tabletEnabled = true;
+
+  const btn = document.getElementById("startTablet");
+  btn.innerText = "📱 Tablet Sharing Active";
+  btn.style.background = "linear-gradient(135deg, #22c55e, #16a34a)";
+  btn.style.color = "#fff";
+
+  document.getElementById("tabletQRContainer").style.display = "block";
+  document.getElementById("tabletStatus").style.display = "inline-block";
+
+  try {
+    const res = await fetch("/tablet-link");
+    const data = await res.json();
+
+    new QRious({
+      element: document.getElementById("tabletQR"),
+      value: data.url,
+      size: 180
+    });
+
+    alert("Open this on tablet:\n" + data.url);
+  } catch (err) {
+    alert("Tablet connection failed");
+    console.error(err);
+  }
+};
+
+async function startLocalCameraPreview() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
+
+    document.getElementById("teacherVideo").srcObject = stream;
+
+    // Store it so class logic can reuse it
+    teacherStream = stream;
+
+    console.log("Camera preview started");
+  } catch (err) {
+    alert("Camera access failed: " + err.message);
+  }
+}
+
+
+
+// Set canvas size to match CSS
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
+
+let drawing=false; 
+let color='#FFD54F'; 
+let size=3;
+let eraserColor='#ffffff';
+
+let lastX = 0;
+let lastY = 0;
+
+
+// Canvas Drawing
+canvas.addEventListener("pointerdown", e => {
+  drawing = true;
+  lastX = e.offsetX;
+  lastY = e.offsetY;
+});
+
+canvas.addEventListener("pointermove", e => {
+  if (!drawing || !canDraw) return;
+
+  drawLine(lastX, lastY, e.offsetX, e.offsetY, color, size, true);
+
+  lastX = e.offsetX;
+  lastY = e.offsetY;
+});
+
+canvas.addEventListener("pointerup", () => drawing = false);
+canvas.addEventListener("pointerleave", () => drawing = false);
+
+// Color & Pen Size
+document.querySelectorAll('.color-swatch').forEach(el=>{
+  el.onclick=()=>{
+    document.querySelectorAll('.color-swatch').forEach(c=>c.classList.remove('selected'));
+    el.classList.add('selected');
+    color=el.dataset.color;
+    document.getElementById('colorPreview').style.background=color;
+    document.getElementById('currentTool').innerText='Tool: Pen';
+  };
+});
+document.getElementById('penSize').oninput=e=>{size=e.target.value;};
+document.getElementById('btnClear').onclick = () => {
+  // Clear locally
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  codeArea.value = "";
+
+  // Tell all other clients to clear
+  socket.emit('clear-all');
+};
+
+
+socket.on('clear-all', () => {
+  // Clear both canvas and code area
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  codeArea.value = "";
+});
+
+
+
+
+document.getElementById('btnErase').onclick=()=>{color=eraserColor; document.getElementById('currentTool').innerText='Tool: Eraser';};
+
+// Toggle Board / Text
+document.getElementById("btnToggleBoard").onclick = () => {
+  if (myRole !== "teacher") return;
+
+  const nextBoard = currentBoard === "canvas" ? "code" : "canvas";
+
+  // Local update
+  setBoard(nextBoard);
+
+  // Sync everyone (including self)
+  socket.emit("board-toggle", nextBoard);
+};
+
+socket.on("board-toggle", board => {
+  setBoard(board);
+  currentBoard = board;
+  applyBoardToggle(board);
+});
+
+socket.on("share-board", board => {
+  alert(`Teacher is sharing ${board === "canvas" ? "Whiteboard" : "Code"}`);
+});
+
+function applyBoardToggle(board) {
+  canvas.style.display = board === "canvas" ? "block" : "none";
+  codeArea.style.display = board === "code" ? "block" : "none";
+}
+
+let history = [];
+let redoStack = [];
+
+function drawLine(x1, y1, x2, y2, color, size, emit) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = size;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  if (!emit) return;
+
+  // Add to history
+  history.push({ x1, y1, x2, y2, color, size });
+  redoStack = []; // clear redo when new action is drawn
+
+  socket.emit("draw", { x1, y1, x2, y2, color, size });
+}
+
+function redrawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  history.forEach(line => drawLine(line.x1, line.y1, line.x2, line.y2, line.color, line.size, false));
+}
+
+// Undo
+document.getElementById('btnUndo').onclick = () => {
+  if (history.length === 0) return;
+  const last = history.pop();
+  redoStack.push(last);
+  redrawCanvas();
+  socket.emit("undo");
+};
+
+// Redo
+document.getElementById('btnRedo').onclick = () => {
+  if (redoStack.length === 0) return;
+  const action = redoStack.pop();
+  history.push(action);
+  drawLine(action.x1, action.y1, action.x2, action.y2, action.color, action.size, true);
+  socket.emit("redo", action);
+};
+
+// Socket listeners
+socket.on("undo", () => {
+  if (history.length === 0) return;
+  const last = history.pop();
+  redoStack.push(last);
+  redrawCanvas();
+});
+
+socket.on("redo", action => {
+  history.push(action);
+  drawLine(action.x1, action.y1, action.x2, action.y2, action.color, action.size, false);
+});
+
+document.getElementById('btnSaveBoard').onclick = () => {
+  const dataURL = canvas.toDataURL("image/png");
+  const link = document.createElement('a');
+  link.href = dataURL;
+  link.download = 'whiteboard.png';
+  link.click();
+};
+
+document.getElementById('btnSaveCode').onclick = () => {
+  const code = codeArea.value;
+  const blob = new Blob([code], { type: "text/plain" });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'code.txt';
+  link.click();
+};
+
+
+// Share Board / Code
+document.getElementById('btnShareWhiteboard').onclick=()=>{
+    socket.emit("share-board", currentBoard);
+  if(!teacherStream) return alert("Start class first");
+  let stream;
+
+  if(currentBoard==='canvas'){
+    // Whiteboard: always white background for visibility
+    const shareCanvas = document.createElement('canvas');
+    shareCanvas.width = canvas.width;
+    shareCanvas.height = canvas.height;
+    const sctx = shareCanvas.getContext('2d');
+    sctx.fillStyle = '#ffffff'; // White background
+    sctx.fillRect(0, 0, shareCanvas.width, shareCanvas.height);
+    sctx.drawImage(canvas, 0, 0); // Draw current content
+    stream = shareCanvas.captureStream(30);
+  }
+  else{
+    // Code/Text: black background with white text
+    const hiddenCanvas=document.createElement('canvas');
+    hiddenCanvas.width=canvas.width; 
+    hiddenCanvas.height=canvas.height;
+    const hctx=hiddenCanvas.getContext('2d');
+    hctx.fillStyle='#000000'; // Black background
+    hctx.fillRect(0,0,hiddenCanvas.width,hiddenCanvas.height);
+    hctx.font='16px monospace'; 
+    hctx.fillStyle='#ffffff'; // White text
+    codeArea.value.split('\n').forEach((line,i)=>hctx.fillText(line,4,20+i*18));
+    stream=hiddenCanvas.captureStream(30);
+  }
+
+  const combined=new MediaStream([...stream.getVideoTracks(),...teacherStream.getAudioTracks()]);
+  document.getElementById('teacherVideo').srcObject=combined;
+  whiteboardStream=stream;
+};
+
+// Add Student
+document.getElementById('btnAddStudent').onclick=async ()=>{
+  const name=prompt("Student Name","Student");
+  if(!name) return;
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});}
+  catch(err){return alert("Camera Error: "+err);}
+  addParticipant(name,'student',stream);
+}
+function drawLine(x1, y1, x2, y2, color, size, emit) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = size;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  if (!emit) return;
+  socket.emit("draw", { x1, y1, x2, y2, color, size });
+}
+socket.on("draw", data => {
+  drawLine(
+    data.x1,
+    data.y1,
+    data.x2,
+    data.y2,
+    data.color,
+    data.size,
+    false
+  );
+});
+
+// Initialize color preview
+document.getElementById('colorPreview').style.background=color;
+  });
+</script>
+
+
+</body>
+</html>

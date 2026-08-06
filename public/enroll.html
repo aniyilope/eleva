@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Eleva | Enrollment</title>
+
+    <link rel="stylesheet" href="./live/enroll.css">
+
+</head>
+<body>
+<header class="navbar">
+
+    <a href="./eleva.html"> <div class="logo">
+                <h1>Eleva</h1>
+            </div>
+           </a>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="courses.html">Courses</a>
+        <a href="enroll.html" class="active">Enroll</a>
+
+    </nav>
+
+
+</header>
+
+
+<!-- Enrollment Container -->
+
+<section class="enrollment-container">
+
+
+    <div class="enrollment-card">
+
+
+        <h1>
+            Join Eleva
+        </h1>
+
+
+        <p>
+            Start your journey into technology and digital skills.
+        </p>
+
+
+        <div class="progress-container">
+
+            <div class="progress-bar" id="progressBar"></div>
+
+        </div>
+
+
+
+        <div class="steps">
+
+            <span class="active">
+                1
+            </span>
+
+            <span>
+                2
+            </span>
+
+            <span>
+                3
+            </span>
+
+            <span>
+                4
+            </span>
+
+            <span>
+                5
+            </span>
+
+        </div>
+
+
+
+
+
+<form id="enrollmentForm">
+
+
+
+
+
+<!-- STEP 1 -->
+
+<div class="form-step active">
+
+
+<h2>
+Personal Information
+</h2>
+
+
+<input 
+type="text"
+name="fullName"
+placeholder="Full Name"
+required>
+
+
+<input
+type="email"
+name="email"
+placeholder="Email Address"
+required>
+
+
+
+<input
+type="tel"
+name="phone"
+placeholder="Phone Number"
+required>
+
+
+
+<select name="gender">
+
+<option value="">
+Select Gender
+</option>
+
+<option>
+Male
+</option>
+
+<option>
+Female
+</option>
+
+</select>
+
+
+
+<input
+type="date"
+name="dob">
+
+
+
+<textarea
+name="address"
+placeholder="Home Address">
+</textarea>
+
+
+</div>
+
+<!-- STEP 2 -->
+
+<div class="form-step">
+
+
+<h2>
+Choose Your Course
+</h2>
+
+<select name="course" required>
+
+
+<option value="">
+Select Course
+</option>
+
+
+<option>
+Software Development
+</option>
+
+
+<option>
+Cyber Security
+</option>
+
+
+<option>
+Networking
+</option>
+
+
+<option>
+Graphics Design
+</option>
+
+
+<option>
+Multimedia
+</option>
+
+
+<option>
+Data Science
+</option>
+
+
+
+</select>
+
+<select name="learningMode">
+
+
+<option>
+Physical
+</option>
+
+
+<option>
+Online
+</option>
+
+
+</select>
+
+
+
+</div>
+
+
+<div class="form-step">
+
+
+<h2>
+Learning Details
+</h2>
+
+<select name="schedule">
+<option>
+Morning
+</option>
+
+<option>
+Afternoon
+</option>
+
+
+<option>
+Evening
+</option>
+
+</select>
+
+<input
+type="text"
+name="guardianName"
+placeholder="Guardian Name">
+
+
+
+<input
+type="tel"
+name="guardianPhone"
+placeholder="Guardian Phone">
+
+
+</div>
+
+<div class="form-step">
+
+
+<h2>
+Create Account
+</h2>
+
+
+
+<input
+type="text"
+name="username"
+placeholder="Username"
+required>
+
+
+
+<input
+type="password"
+name="password"
+placeholder="Password"
+required>
+
+
+
+</div>
+<div class="form-step">
+
+
+<h2>
+Review Application
+</h2>
+
+
+<div id="reviewBox">
+
+</div>
+
+
+
+<label class="terms">
+
+<input 
+type="checkbox"
+required>
+
+I confirm that my information is correct.
+
+</label>
+
+
+
+</div>
+
+
+<div class="buttons">
+
+
+<button 
+type="button"
+id="previousBtn">
+
+Previous
+
+</button>
+
+
+
+<button 
+type="button"
+id="nextBtn">
+
+Next
+
+</button>
+
+
+<button
+type="submit"
+id="submitBtn">
+
+Submit Application
+
+</button>
+
+
+
+</div>
+
+
+</form>
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+<script src="./enroll.js"></script>
+
+
+</body>
+
+</html>
+

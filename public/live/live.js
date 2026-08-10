@@ -1353,14 +1353,17 @@ socket.on("answer", async data => {
 
             if (pc) {
 
-                await pc.setRemoteDescription(
-                    data.answer
-                );
+               await pc.setRemoteDescription(data.answer);
 
-                await flushIceCandidates(
-                    pc,
-                    data.from
-                );
+              await flushIceCandidates(
+                  pc,
+                  data.from
+              );
+              
+              console.log(
+                  "Student answer received:",
+                  data.from
+              );
             }
 
             return;

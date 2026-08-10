@@ -45,31 +45,21 @@ let redoStack=[];
 // "participants" updates instead of being wiped and rebuilt every time.
 let participantTiles={};
 
-const rtcConfig={
-iceServers:[
-{
-urls:"stun:stun.l.google.com:19302"
-},
-// STUN alone can't traverse many mobile-carrier/corporate NATs - this free
-// TURN relay (Open Relay Project, metered.ca) is a fallback so calls still
-// connect across different networks. Fine for testing; for production,
-// swap in your own TURN credentials (e.g. Twilio, Xirsys, or self-hosted coturn).
-{
-urls:"turn:openrelay.metered.ca:80",
-username:"openrelayproject",
-credential:"openrelayproject"
-},
-{
-urls:"turn:openrelay.metered.ca:443",
-username:"openrelayproject",
-credential:"openrelayproject"
-},
-{
-urls:"turn:openrelay.metered.ca:443?transport=tcp",
-username:"openrelayproject",
-credential:"openrelayproject"
-}
-]
+const rtcConfig = {
+    iceServers: [
+        {
+            urls: "stun:stun.l.google.com:19302"
+        },
+        {
+            urls: [
+                "turn:openrelay.metered.ca:80",
+                "turn:openrelay.metered.ca:443",
+                "turn:openrelay.metered.ca:443?transport=tcp"
+            ],
+            username: "openrelayproject",
+            credential: "openrelayproject"
+        }
+    ]
 };
 
 function initLiveCore(role,username,userId){

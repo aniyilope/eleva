@@ -322,26 +322,8 @@ header{
 </div>
 
 <script>
-  
-  
-  // Redirect to login if not logged in
-  if (!localStorage.getItem('loggedIn')) {
-    window.location.href = 'login.html';
-  }
-
-
-
-  // function logout() {
-  //   localStorage.removeItem('loggedIn');
-  //   localStorage.removeItem('username');
-  //   window.location.href = 'login.html';
-  // }
-
-
-  const role = localStorage.getItem('role');
-  if(role === 'student'){
-    document.getElementById('btnStartClass').style.display = 'none'; // hide start class for students
-  }
+  // Role/name/login are now resolved from the real session below,
+  // once the page's main script has fetched /session.
 </script>
 
 
@@ -354,10 +336,11 @@ const socket = io(); // make sure port matches your server
 
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
 let participants=[];
 let myRole=null;
 let myName='';
+let myUserId=null;
 let teacherStream=null;
 let screenStream=null;
 let whiteboardStream=null;
@@ -375,6 +358,48 @@ const codeArea = document.getElementById('codeArea');  // ✅ declare early
 const chatBox = document.getElementById('chatBox');
 const chatInput = document.getElementById('chatInput');
 const camStatus = document.getElementById('camStatus');
+
+// ---- Real teacher <-> student video (teacher is the hub) ----
+const rtcConfig = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    // STUN alone can't traverse many mobile-carrier/corporate NATs - this free
+    // TURN relay (Open Relay Project, metered.ca) is a fallback so calls still
+    // connect across different networks. Fine for testing; for production,
+    // swap in your own TURN credentials (e.g. Twilio, Xirsys, or self-hosted coturn).
+    { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+  ]
+};
+
+let selfParticipant = null;        // this user's own tile in the participant list
+let peerConnections = {};          // TEACHER side: student socketId -> RTCPeerConnection
+let participantTiles = {};         // TEACHER side: student socketId -> participant tile
+let myPeerConnection = null;       // STUDENT side: single connection to the teacher
+let teacherSocketIdForVideo = null;// STUDENT side: which socket the teacher is on
+let myLocalStream = null;          // STUDENT side: this student's own camera
+
+async function ensureLocalStream() {
+  if (myLocalStream) return myLocalStream;
+
+  try {
+    myLocalStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
+
+    if (selfParticipant) {
+      selfParticipant.stream = myLocalStream;
+      selfParticipant.video.srcObject = myLocalStream;
+    }
+
+  } catch (err) {
+    console.log("Camera error:", err);
+  }
+
+  return myLocalStream;
+}
 
 socket.on("class-status", (status) => {
   classStarted = status;
@@ -394,6 +419,153 @@ socket.on("class-status", (status) => {
     canDraw = false;
     codeArea.disabled = true;
   }
+
+  if (status && myRole === "student") {
+    // Class just went live (or we joined an already-live class) -
+    // get our camera and let the teacher know we're ready to be called
+    ensureLocalStream().then(() => {
+      socket.emit("student-ready-for-video", { name: myName });
+    });
+  }
+
+  if (!status && myRole === "student" && myPeerConnection) {
+    myPeerConnection.close();
+    myPeerConnection = null;
+    teacherSocketIdForVideo = null;
+    document.getElementById("teacherVideo").srcObject = null;
+  }
+});
+
+// TEACHER: a student is live and ready to be called - call them
+socket.on("student-ready-for-video", async ({ socketId, name }) => {
+
+  if (myRole !== "teacher" || peerConnections[socketId]) return;
+
+  const pc = new RTCPeerConnection(rtcConfig);
+  peerConnections[socketId] = pc;
+
+  const tile = addParticipant(name, "student", null);
+  participantTiles[socketId] = tile;
+
+  if (teacherStream) {
+    teacherStream.getTracks().forEach(track => pc.addTrack(track, teacherStream));
+  }
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      socket.emit("ice-candidate", { to: socketId, candidate: e.candidate });
+    }
+  };
+
+  pc.ontrack = (e) => {
+    tile.stream = e.streams[0];
+    tile.video.srcObject = e.streams[0];
+  };
+
+  try {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit("offer", { to: socketId, offer });
+  } catch (err) {
+    console.log("Offer error:", err);
+  }
+
+});
+
+// STUDENT: teacher is calling us
+socket.on("offer", async ({ from, offer }) => {
+
+  if (myRole !== "student") return;
+
+  teacherSocketIdForVideo = from;
+
+  await ensureLocalStream();
+
+  myPeerConnection = new RTCPeerConnection(rtcConfig);
+
+  if (myLocalStream) {
+    myLocalStream.getTracks().forEach(track => myPeerConnection.addTrack(track, myLocalStream));
+  }
+
+  myPeerConnection.onicecandidate = (e) => {
+    if (e.candidate) {
+      socket.emit("ice-candidate", { to: from, candidate: e.candidate });
+    }
+  };
+
+  myPeerConnection.ontrack = (e) => {
+    document.getElementById("teacherVideo").srcObject = e.streams[0];
+  };
+
+  try {
+    await myPeerConnection.setRemoteDescription(offer);
+    const answer = await myPeerConnection.createAnswer();
+    await myPeerConnection.setLocalDescription(answer);
+    socket.emit("answer", { to: from, answer });
+  } catch (err) {
+    console.log("Answer error:", err);
+  }
+
+});
+
+// TEACHER: student answered our call
+socket.on("answer", async ({ from, answer }) => {
+  const pc = peerConnections[from];
+  if (!pc) return;
+
+  try {
+    await pc.setRemoteDescription(answer);
+  } catch (err) {
+    console.log("setRemoteDescription (answer) error:", err);
+  }
+});
+
+// Both sides: relay ICE candidates to the right peer connection
+socket.on("ice-candidate", async ({ from, candidate }) => {
+  try {
+    if (myRole === "teacher") {
+      const pc = peerConnections[from];
+      if (pc) await pc.addIceCandidate(candidate);
+    } else if (myPeerConnection) {
+      await myPeerConnection.addIceCandidate(candidate);
+    }
+  } catch (err) {
+    console.log("ICE candidate error:", err);
+  }
+});
+
+// Cleanup when the other side of a call disconnects
+socket.on("peer-left", ({ socketId }) => {
+
+  if (myRole === "teacher") {
+
+    const pc = peerConnections[socketId];
+    if (pc) {
+      pc.close();
+      delete peerConnections[socketId];
+    }
+
+    const tile = participantTiles[socketId];
+    if (tile) {
+      tile.element.remove();
+      delete participantTiles[socketId];
+    }
+
+  } else if (socketId === teacherSocketIdForVideo) {
+
+    if (myPeerConnection) {
+      myPeerConnection.close();
+      myPeerConnection = null;
+    }
+    document.getElementById("teacherVideo").srcObject = null;
+    teacherSocketIdForVideo = null;
+
+  }
+
+});
+
+socket.on("no-teacher-assigned", () => {
+  document.getElementById("liveStatus").innerText = "No teacher assigned yet";
 });
 
 codeArea.addEventListener("input", () => {
@@ -419,23 +591,60 @@ function setBoard(board) {
 }
 
 
-function initRole(){
+async function initRole(){
   const urlParams = new URLSearchParams(window.location.search);
   const tabletMode = urlParams.get("tablet") === "1";
 
-  if (tabletMode) {
-    myRole = "teacher";
-    myName = "Teacher (Tablet)";
-    startLocalCameraPreview();
-  } else {
-    const role = prompt("Are you the teacher? yes/no", "yes");
-    myRole = role.toLowerCase() === "yes" ? "teacher" : "student";
-    myName = myRole === "teacher"
-      ? prompt("Teacher Name", "Teacher")
-      : prompt("Student Name", "Student");
+  let sessionUser = null;
+
+  try{
+    const res = await fetch("/session");
+    const data = await res.json();
+    if(data.loggedIn){
+      sessionUser = data.user;
+    }
+  }catch(err){
+    console.error("Session check failed:", err);
   }
 
-  addParticipant(myName, myRole, null);
+  if (tabletMode) {
+    // Companion tablet device: reuse the logged-in teacher's identity if this
+    // device is also signed in, otherwise fall back to a local-only preview
+    // (it won't be tied to a specific roster room until it's logged in too).
+    myRole = "teacher";
+    myName = sessionUser ? sessionUser.username : "Teacher (Tablet)";
+    myUserId = sessionUser ? sessionUser._id : null;
+    startLocalCameraPreview();
+  } else {
+    if(!sessionUser){
+      window.location.href = "login.html";
+      return;
+    }
+
+    myRole = sessionUser.role;
+    myName = sessionUser.username;
+    myUserId = sessionUser._id;
+
+    if(myRole === "student"){
+      document.getElementById("btnStartClass").style.display = "none";
+    }
+  }
+
+  // #teacherVideo is muted by default in the HTML to avoid the teacher hearing
+  // their own mic feed back through their local preview. For a student it's
+  // the real incoming remote audio, so it needs to be unmuted.
+  document.getElementById("teacherVideo").muted = (myRole !== "student");
+
+  // Joins this user into the right roster room (their own room if teacher,
+  // their assigned teacher's room if student) so start-class/chat/draw/
+  // code-update work as before.
+  socket.emit("join-class", {
+    role: myRole,
+    name: myName,
+    userId: myUserId
+  });
+
+  selfParticipant = addParticipant(myName, myRole, null);
 }
 
 initRole();
@@ -460,7 +669,8 @@ function addParticipant(name,role,stream){
   const video=div.querySelector('video');
   if(stream) video.srcObject=stream;
   list.appendChild(div);
-  participants.push({name,role,stream,element:div,video});
+  const participant={name,role,stream,element:div,video};
+  participants.push(participant);
 
   div.querySelector('.btnVideoToggle').onclick=()=>{
     if(stream) stream.getVideoTracks().forEach(t=>t.enabled=!t.enabled);
@@ -468,6 +678,8 @@ function addParticipant(name,role,stream){
   div.querySelector('.btnMicToggle').onclick=()=>{
     if(stream) stream.getAudioTracks().forEach(t=>t.enabled=!t.enabled);
   };
+
+  return participant;
 }
 
 // Chat
@@ -528,10 +740,19 @@ document.getElementById('btnEndClass').onclick=()=>{
   if(whiteboardStream) whiteboardStream.getTracks().forEach(t=>t.stop());
   document.getElementById('teacherVideo').srcObject=null;
   document.getElementById('liveStatus').innerText='Not Live';
+
+  // Close real student video connections
+  Object.values(peerConnections).forEach(pc=>pc.close());
+  peerConnections={};
+  participantTiles={};
+
   participants.filter(p=>p.role==='student').forEach(p=>{
     if(p.stream) p.stream.getTracks().forEach(t=>t.stop());
     p.element.remove();
   });
+
+  socket.emit("end-class");
+
   alert("Class ended. Students have left.");
 };
 
@@ -652,6 +873,8 @@ document.querySelectorAll('.color-swatch').forEach(el=>{
 });
 document.getElementById('penSize').oninput=e=>{size=e.target.value;};
 document.getElementById('btnClear').onclick = () => {
+  if (myRole !== "teacher") return;
+
   // Clear locally
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   codeArea.value = "";
@@ -726,6 +949,10 @@ function redrawCanvas() {
   history.forEach(line => drawLine(line.x1, line.y1, line.x2, line.y2, line.color, line.size, false));
 }
 
+socket.on("draw", data => {
+  drawLine(data.x1, data.y1, data.x2, data.y2, data.color, data.size, false);
+});
+
 // Undo
 document.getElementById('btnUndo').onclick = () => {
   if (history.length === 0) return;
@@ -740,7 +967,7 @@ document.getElementById('btnRedo').onclick = () => {
   if (redoStack.length === 0) return;
   const action = redoStack.pop();
   history.push(action);
-  drawLine(action.x1, action.y1, action.x2, action.y2, action.color, action.size, true);
+  drawLine(action.x1, action.y1, action.x2, action.y2, action.color, action.size, false);
   socket.emit("redo", action);
 };
 
@@ -777,7 +1004,9 @@ document.getElementById('btnSaveCode').onclick = () => {
 
 // Share Board / Code
 document.getElementById('btnShareWhiteboard').onclick=()=>{
-    socket.emit("share-board", currentBoard);
+  if (myRole !== "teacher") return;
+
+  socket.emit("share-board", currentBoard);
   if(!teacherStream) return alert("Start class first");
   let stream;
 
@@ -820,29 +1049,6 @@ document.getElementById('btnAddStudent').onclick=async ()=>{
   catch(err){return alert("Camera Error: "+err);}
   addParticipant(name,'student',stream);
 }
-function drawLine(x1, y1, x2, y2, color, size, emit) {
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.strokeStyle = color;
-  ctx.lineWidth = size;
-  ctx.lineCap = "round";
-  ctx.stroke();
-
-  if (!emit) return;
-  socket.emit("draw", { x1, y1, x2, y2, color, size });
-}
-socket.on("draw", data => {
-  drawLine(
-    data.x1,
-    data.y1,
-    data.x2,
-    data.y2,
-    data.color,
-    data.size,
-    false
-  );
-});
 
 // Initialize color preview
 document.getElementById('colorPreview').style.background=color;

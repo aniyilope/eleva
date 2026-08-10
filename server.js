@@ -9,6 +9,7 @@ const io=require("socket.io")(http);
 const path=require("path");
 const bodyParser=require("body-parser");
 const session=require("express-session");
+const { MongoStore } = require("connect-mongo");
 const bcrypt=require("bcrypt");
 const os=require("os");
 
@@ -17,6 +18,12 @@ const Attendance=require("./models/Attendance");
 const Enrollment=require("./models/Enrollment");
 
 const PORT=process.env.PORT||3000;
+
+// Needed so secure cookies work correctly when deployed behind a host's
+// HTTPS-terminating proxy (Render, Railway, Heroku, etc. all do this) -
+// without it, Express sees every request as plain HTTP even when the
+// person's browser is actually talking to you over HTTPS.
+app.set("trust proxy",1);
 
 mongoose.connect(process.env.MONGO_URI)
 .then(()=>console.log("Connected to MongoDB Atlas"))
@@ -32,7 +39,21 @@ app.use(session({
 secret:process.env.SESSION_SECRET||"super-secret-key",
 resave:false,
 saveUninitialized:false,
-cookie:{maxAge:60*60*1000}
+// Sessions used to live only in server memory - every restart logged
+// everyone out, and it wouldn't work correctly if the host ever ran more
+// than one instance. Storing them in the same MongoDB Atlas cluster you
+// already use fixes both.
+store:MongoStore.create({
+mongoUrl:process.env.MONGO_URI,
+collectionName:"sessions"
+}),
+cookie:{
+maxAge:60*60*1000,
+// secure cookies require HTTPS, which only exists once actually deployed -
+// forcing it on for local http://localhost testing would break login there.
+secure:process.env.NODE_ENV==="production",
+sameSite:"lax"
+}
 }));
 
 app.use(express.static(path.join(__dirname,"public")));
@@ -44,10 +65,24 @@ let liveTeachers={};      // teacherId -> { socketId }
 let participants={};      // teacherId -> [ {id, name, role} ]
 let waitingStudents={};   // teacherId -> [ {socketId, name, userId} ]
 let sharedCode={};        // teacherId -> code string
+let sharedBoard={};       // teacherId -> "canvas" | "code" (which view is showing)
+let whiteboardHistory={}; // teacherId -> [ {x1,y1,x2,y2,color,size}, ... ] so late joiners can catch up
 let activeAttendance={};
 
 function teacherRoom(teacherId){
 return "teacher-"+teacherId;
+}
+
+// Catches a newly-joined socket (teacher reconnecting, or a student joining
+// mid-class) up on the current board mode and whatever's already been drawn.
+function syncBoardState(socket,teacherId){
+
+socket.emit("board-toggle",sharedBoard[teacherId]||"canvas");
+
+(whiteboardHistory[teacherId]||[]).forEach(stroke=>{
+socket.emit("draw",stroke);
+});
+
 }
 
 // Real-time stats for a teacher's dashboard (roster size, live status, who's in/waiting)
@@ -178,32 +213,25 @@ return res.sendFile(path.join(__dirname,"public","teacher-dashboard.html"));
 res.sendFile(path.join(__dirname,"public","student-dashboard.html"));
 });
 
-app.get("/admin/enrollments",(req,res)=>{
+app.post("/enroll", async (req, res) => {
 
-    res.json({
-        message:"Enrollments route is working"
-    });
+    try {
 
-});
-app.post("/enroll",async(req,res)=>{
-
-try{
-
-const {
-fullName,
-email,
-phone,
-gender,
-dob,
-address,
-course,
-learningMode,
-schedule,
-guardianName,
-guardianPhone,
-username,
-password
-}=req.body;
+        const {
+            fullName,
+            email,
+            phone,
+            gender,
+            dob,
+            address,
+            course,
+            learningMode,
+            schedule,
+            guardianName,
+            guardianPhone,
+            username,
+            password
+        } = req.body;
 
 
 const exists = await Enrollment.findOne({
@@ -270,7 +298,14 @@ message:"Server Error"
 });
 
 // Get Pending Applications
-
+// NOTE: this used to be defined twice - an earlier, unfiltered, unauthenticated
+// version (Enrollment.find() with no status filter or admin check) was
+// shadowing this one, since Express uses the first route registered for a
+// given path/method. That meant the admin dashboard's "Pending Applications"
+// table was actually showing every enrollment ever created, including
+// already-approved/rejected ones - Approve/Reject still "worked" on those
+// rows but silently no-opped (the user already exists), which looked like
+// the buttons were broken. Only this version remains now.
 app.get("/admin/enrollments",async(req,res)=>{
 
 try{
@@ -400,11 +435,22 @@ message:"Server Error"
 
 
 // Reject Student
+// NOTE: this was missing the admin session check that every other
+// /admin/* route has - added here for consistency/security.
 
 app.post("/admin/reject/:id",async(req,res)=>{
 
 
 try{
+
+
+if(!req.session.user || req.session.user.role !== "admin"){
+
+return res.status(403).json({
+message:"Unauthorized"
+});
+
+}
 
 
 await Enrollment.findByIdAndUpdate(
@@ -546,6 +592,129 @@ res.json(teachers);
 
 });
 
+// Create a new teacher account (previously the only way to do this was
+// running seedUsers.js / create-admin.js by hand)
+app.post("/admin/create-teacher",async(req,res)=>{
+
+if(!req.session.user || req.session.user.role!=="admin"){
+return res.status(403).json({message:"Unauthorized"});
+}
+
+try{
+
+const{username,email,password}=req.body;
+
+if(!username||!email||!password){
+
+return res.json({
+success:false,
+message:"Username, email, and password are all required"
+});
+
+}
+
+const exists=await User.findOne({
+$or:[{username},{email}]
+});
+
+if(exists){
+
+return res.json({
+success:false,
+message:"Username or email already in use"
+});
+
+}
+
+const hashedPassword=await bcrypt.hash(password,10);
+
+await User.create({
+username,
+email,
+password:hashedPassword,
+role:"teacher"
+});
+
+res.json({
+success:true,
+message:"Teacher account created"
+});
+
+}catch(err){
+
+console.log(err);
+
+res.status(500).json({
+success:false,
+message:"Server Error"
+});
+
+}
+
+});
+
+// Create a new student account directly (bypassing the public enrollment
+// form + approval step - useful for admin-seeded/test accounts). Enrollment
+// approval still works as before and creates students the same way.
+app.post("/admin/create-student",async(req,res)=>{
+
+if(!req.session.user || req.session.user.role!=="admin"){
+return res.status(403).json({message:"Unauthorized"});
+}
+
+try{
+
+const{username,email,password}=req.body;
+
+if(!username||!email||!password){
+
+return res.json({
+success:false,
+message:"Username, email, and password are all required"
+});
+
+}
+
+const exists=await User.findOne({
+$or:[{username},{email}]
+});
+
+if(exists){
+
+return res.json({
+success:false,
+message:"Username or email already in use"
+});
+
+}
+
+const hashedPassword=await bcrypt.hash(password,10);
+
+await User.create({
+username,
+email,
+password:hashedPassword,
+role:"student"
+});
+
+res.json({
+success:true,
+message:"Student account created"
+});
+
+}catch(err){
+
+console.log(err);
+
+res.status(500).json({
+success:false,
+message:"Server Error"
+});
+
+}
+
+});
+
 // List students with their current assignment (for the admin roster-assignment screen)
 app.get("/admin/students",async(req,res)=>{
 
@@ -678,6 +847,8 @@ socket.emit("code-update",sharedCode[userId]||"");
 socket.emit("participants",participants[userId]||[]);
 socket.emit("waiting-list",waitingStudents[userId]||[]);
 
+syncBoardState(socket,userId);
+
 (waitingStudents[userId]||[]).forEach(student=>{
 
 io.to(socket.id).emit("new-student",{
@@ -712,31 +883,51 @@ socket.join(teacherRoom(teacherId));
 socket.emit("class-status",!!liveTeachers[teacherId]);
 socket.emit("code-update",sharedCode[teacherId]||"");
 
+syncBoardState(socket,teacherId);
+
 if(!liveTeachers[teacherId]){
 // Teacher hasn't started class yet - don't add to waiting list until they do
 return;
 }
 
-waitingStudents[teacherId]=waitingStudents[teacherId]||[];
+waitingStudents[teacherId] =
+    waitingStudents[teacherId] || [];
 
-waitingStudents[teacherId].push({
-socketId:socket.id,
-name,
-userId
-});
+const alreadyWaiting =
+    waitingStudents[teacherId].some(
+        student => student.userId === userId
+    );
 
-console.log("Student waiting:",name);
+if (!alreadyWaiting) {
 
-io.to(liveTeachers[teacherId].socketId).emit("new-student",{
-socketId:socket.id,
-username:name
-});
+    waitingStudents[teacherId].push({
+        socketId: socket.id,
+        name,
+        userId
+    });
 
-io.to(teacherRoom(teacherId)).emit("waiting-list",waitingStudents[teacherId]);
+    console.log("Student waiting:", name);
+
+    io.to(liveTeachers[teacherId].socketId).emit("new-student", {
+        socketId: socket.id,
+        username: name
+    });
+}
+
+io.to(teacherRoom(teacherId)).emit(
+    "waiting-list",
+    waitingStudents[teacherId]
+);
 
 pushTeacherStats(teacherId);
 
 });
+
+// ---- Everything below used to be (partly) nested inside join-class, after
+// the teacher branch's early `return` - which meant start-class and
+// admit-student never registered a listener on the teacher's own socket.
+// They're now registered once per connection, at the top level, using
+// socket.role / socket.teacherId / socket.userId (set inside join-class above). ----
 
 socket.on("start-class",()=>{
 
@@ -772,6 +963,7 @@ io.to(teacherRoom(teacherId)).emit("waiting-list",waitingStudents[teacherId]);
 pushTeacherStats(teacherId);
 
 });
+
 socket.on("admit-student",async({socketId,offer})=>{
 
 const teacherId=socket.userId;
@@ -824,6 +1016,7 @@ console.log(studentSocket.name,"admitted");
 pushTeacherStats(teacherId);
 
 });
+
 socket.on("code-update",code=>{
 if(!socket.teacherId)return;
 sharedCode[socket.teacherId]=code;
@@ -832,12 +1025,42 @@ socket.to(teacherRoom(socket.teacherId)).emit("code-update",code);
 
 socket.on("draw",data=>{
 if(!socket.teacherId)return;
+whiteboardHistory[socket.teacherId]=whiteboardHistory[socket.teacherId]||[];
+whiteboardHistory[socket.teacherId].push(data);
 socket.to(teacherRoom(socket.teacherId)).emit("draw",data);
 });
 
 socket.on("clear-all",()=>{
 if(!socket.teacherId)return;
+whiteboardHistory[socket.teacherId]=[];
 io.to(teacherRoom(socket.teacherId)).emit("clear-all");
+});
+
+socket.on("board-toggle",board=>{
+if(!socket.teacherId)return;
+sharedBoard[socket.teacherId]=board;
+socket.to(teacherRoom(socket.teacherId)).emit("board-toggle",board);
+});
+
+socket.on("share-board",board=>{
+if(!socket.teacherId)return;
+socket.to(teacherRoom(socket.teacherId)).emit("share-board",board);
+});
+
+socket.on("undo",()=>{
+if(!socket.teacherId)return;
+const hist=whiteboardHistory[socket.teacherId];
+if(hist&&hist.length){
+hist.pop();
+}
+socket.to(teacherRoom(socket.teacherId)).emit("undo");
+});
+
+socket.on("redo",action=>{
+if(!socket.teacherId)return;
+whiteboardHistory[socket.teacherId]=whiteboardHistory[socket.teacherId]||[];
+whiteboardHistory[socket.teacherId].push(action);
+socket.to(teacherRoom(socket.teacherId)).emit("redo",action);
 });
 
 socket.on("chat",data=>{
@@ -845,25 +1068,45 @@ if(!socket.teacherId)return;
 io.to(teacherRoom(socket.teacherId)).emit("chat",data);
 });
 
-socket.on("offer",({to,offer})=>{
+socket.on("offer",({to,offer,kind})=>{
 io.to(to).emit("offer",{
 from:socket.id,
-offer
+offer,
+kind
 });
 });
 
-socket.on("answer",({to,answer})=>{
+socket.on("answer",({to,answer,kind})=>{
 io.to(to).emit("answer",{
 from:socket.id,
-answer
+answer,
+kind
 });
 });
 
-socket.on("ice-candidate",({to,candidate})=>{
+socket.on("ice-candidate",({to,candidate,kind})=>{
 io.to(to).emit("ice-candidate",{
 from:socket.id,
-candidate
+candidate,
+kind
 });
+});
+
+// Used by liveclass.html: a student's camera/mic is ready and they're
+// waiting to be called, so tell their teacher (if that teacher is live).
+socket.on("student-ready-for-video",(data)=>{
+
+if(!socket.teacherId)return;
+
+const teacherEntry=liveTeachers[socket.teacherId];
+
+if(!teacherEntry)return;
+
+io.to(teacherEntry.socketId).emit("student-ready-for-video",{
+socketId:socket.id,
+name:(data&&data.name)?data.name:socket.name
+});
+
 });
 
 socket.on("disconnect",async()=>{
@@ -895,6 +1138,8 @@ delete activeAttendance[socket.id];
 const teacherId=socket.teacherId;
 
 if(teacherId){
+
+io.to(teacherRoom(teacherId)).emit("peer-left",{socketId:socket.id});
 
 if(participants[teacherId]){
 participants[teacherId]=participants[teacherId].filter(

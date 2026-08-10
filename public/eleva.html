@@ -19,6 +19,7 @@
         <a href="./eleva.html">Home</a>
      <a href="#About">About us</a>
         <a href="liveclass.html" id="ElevaLive" style="display:none;">ElevaLive</a>
+      
         <div class="dropdown">
                   <p class="second">Courses ▼</p>
                   <div class="dropdown-content">
@@ -28,9 +29,9 @@
         </div>
         </div>
         <a href="#footer">Contact</a>
-        <a href="./login.html" ><button type="button" id="authBtn" class="login" target="_blank"  >Login</button></a>
+        <a href="./login.html" target="_blank"><button type="button" id="authBtn" class="login" target="_blank"  >Login</button></a>
         </div>
-
+          <button class="mobile-menu-btn" id="mobileMenuBtn"> ☰ </button>
     </Nav>
     </div>
     <div class="coo">
@@ -74,7 +75,7 @@
   </div>
 
   <div class="signup-container" id="Apply">
-<a href="./enroll.html"> <button type="submit">Enroll</button>
+<a href="./enroll.html" target="_blank"> <button type="submit">Enroll</button>
 </a>  
 </form>
 </div>
@@ -116,6 +117,20 @@
 </footer>
 
 
+
+
+
+<script>
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const nav = document.querySelector("nav");
+
+mobileMenuBtn.addEventListener("click", () => {
+    nav.classList.toggle("mobile-open");
+
+    mobileMenuBtn.textContent =
+        nav.classList.contains("mobile-open") ? "✕" : "☰";
+});
+</script>
 
 <script>
   const authBtn = document.getElementById('authBtn');

@@ -16,14 +16,14 @@
 <body >
   <div class="signup-container">
     <h2 style=>Login</h2>
-    <form id="loginForm">
+    <form action="/login" method="POST" target="_blank" id="loginForm">
       <label >Username</label>
       <input type="text" id="loginUsername" placeholder="Enter username" required>
 
       <label >Password</label>
       <input type="password" id="loginPassword" placeholder="Enter your password" required>
 
-      <button type="submit">Login</button>
+      <button type="submit" >Login</button>
       <div id="loginError" style="color:red;margin-top:6px;"></div>
     </form>
   </div>

@@ -112,8 +112,6 @@ username,
 userId
 );
 
-let admitted=false;
-
 // SHOW WAITING
 
 document.getElementById(
@@ -121,294 +119,37 @@ document.getElementById(
 ).style.display="inline";
 
 
-// CLASS STATUS
-
-
-socket.on("class-status",live=>{
-
-
-document.getElementById(
-"liveStatus"
-).innerText=
-live?"Live":"Not Live";
-
-
-});
-
-// STUDENT ADMITTED
-
-
+// Hide the "waiting for approval" notice once the teacher admits us.
+// Camera + the actual WebRTC call setup are handled inside live.js -
+// this page used to duplicate that logic separately (with a couple of
+// calls to functions that didn't exist), which also fought with live.js's
+// own listeners for the same events, so it's been removed in favor of
+// just the one thing this page needs that live.js doesn't know about.
 socket.on(
 "admitted",
-async(data)=>{
-
-
-admitted=true;
-
-
+()=>{
 
 document.getElementById(
 "waitingNotice"
 ).style.display="none";
 
-
-
-const video=
-document.getElementById(
-"studentVideo"
-);
-
-
-
-try{
-
-
-const stream=
-await navigator.mediaDevices.getUserMedia({
-
-video:true,
-
-audio:true
-
 });
 
-
-
-video.srcObject=stream;
-
-
-
-startWebRTC(
-data.socketId,
-stream
-);
-
-
-
-}catch(err){
-
-console.log(
-"Camera error",
-err
-);
-
-
-}
-
-
-
-});
-
-
-// WHITEBOARD
-
-
+// If the class ends, go back to a "waiting" state rather than staying
+// stuck on whatever was shown last.
 socket.on(
-"code-update",
-code=>{
+"class-status",
+live=>{
 
-
-if(admitted){
+if(!live){
 
 document.getElementById(
-"codeArea"
-).value=code;
+"waitingNotice"
+).style.display="inline";
 
 }
 
-
 });
-
-socket.on(
-"draw",
-data=>{
-
-
-if(admitted){
-
-drawLine(
-data.x1,
-data.y1,
-data.x2,
-data.y2,
-data.color,
-data.size,
-false
-);
-
-}
-
-
-});
-
-
-socket.on(
-"clear-all",
-()=>{
-
-
-if(admitted){
-
-clearCanvas();
-
-}
-
-
-});
-
-// CHAT
-
-
-socket.on(
-"chat",
-data=>{
-
-
-const div=
-document.createElement("div");
-
-
-div.className=
-"msg "+data.role;
-
-
-div.textContent=
-`${data.name}: ${data.message}`;
-
-
-
-document.getElementById(
-"chatBox"
-)
-.appendChild(div);
-
-
-
-});
-
-
-document.getElementById(
-"btnSendChat"
-).onclick=()=>{
-
-
-const input=
-document.getElementById(
-"chatInput"
-);
-
-
-
-const msg=input.value.trim();
-
-
-
-if(!msg)return;
-
-
-
-socket.emit(
-"chat",
-{
-name:username,
-role:role,
-message:msg
-}
-);
-
-
-
-input.value="";
-
-
-};
-
-// PARTICIPANTS
-
-
-socket.on(
-"participants",
-list=>{
-
-
-const box=
-document.getElementById(
-"participantsList"
-);
-
-
-
-box.innerHTML="";
-
-
-
-list.forEach(p=>{
-
-
-const div=
-document.createElement("div");
-
-
-div.textContent=
-`${p.name} (${p.role})`;
-
-
-
-box.appendChild(div);
-
-});
-
-});
-
-// CAMERA BUTTON
-
-
-document.getElementById(
-"btnCamToggle"
-).onclick=async()=>{
-
-
-const video=
-document.getElementById(
-"studentVideo"
-);
-
-
-
-if(!video.srcObject){
-
-
-const stream=
-await navigator.mediaDevices.getUserMedia({
-
-video:true,
-
-audio:true
-
-});
-
-
-video.srcObject=stream;
-
-
-}
-
-
-else{
-
-
-video.srcObject
-.getTracks()
-.forEach(track=>{
-
-track.enabled=!track.enabled;
-
-});
-
-
-}
-
-};
 
 });
 

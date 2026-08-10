@@ -10,9 +10,7 @@ const pendingCount = document.getElementById(
 
 async function loadApplications(){
 
-
     try{
-
 
         const response = await fetch("/admin/enrollments",{
             credentials:"include"
@@ -20,11 +18,24 @@ async function loadApplications(){
 
         const applications = await response.json();
 
+        console.log("Status:", response.status);
+        console.log("Applications response:", applications);
+
+        if (!response.ok) {
+            console.error("Server error:", applications);
+            alert(applications.message || "Failed to load applications");
+            return;
+        }
+
+        if (!Array.isArray(applications)) {
+            console.error("Expected array but received:", applications);
+            alert("Server did not return an application list");
+            return;
+        }
 
         applicationTable.innerHTML = "";
 
-
-
+        
 
         pendingCount.textContent =
         applications.length;
@@ -170,7 +181,7 @@ async function approveStudent(id){
 
         const response = await fetch(
 
-            `http://localhost:3000/admin/approve/${id}`,
+            `/admin/approve/${id}`,
 
             {
 
@@ -223,7 +234,7 @@ async function rejectStudent(id){
 
         const response = await fetch(
 
-            `http://localhost:3000/admin/reject/${id}`,
+            `/admin/reject/${id}`,
 
             {
 
@@ -472,4 +483,180 @@ async function assignTeacher(studentId, btn){
 
 
 loadRoster();
+
+
+// ================= ADD TEACHER =================
+
+const addTeacherForm = document.getElementById(
+    "addTeacherForm"
+);
+
+
+if(addTeacherForm){
+
+
+    addTeacherForm.addEventListener("submit", async (e) => {
+
+
+        e.preventDefault();
+
+
+        const username = document.getElementById(
+            "teacherUsername"
+        ).value.trim();
+
+
+        const email = document.getElementById(
+            "teacherEmail"
+        ).value.trim();
+
+
+        const password = document.getElementById(
+            "teacherPassword"
+        ).value;
+
+
+        try{
+
+
+            const response = await fetch(
+
+                "/admin/create-teacher",
+
+                {
+
+                    method:"POST",
+
+                    headers:{"Content-Type":"application/json"},
+
+                    credentials:"include",
+
+                    body:JSON.stringify({username, email, password})
+
+                }
+
+            );
+
+
+            const result = await response.json();
+
+
+            alert(result.message);
+
+
+            if(result.success){
+
+                addTeacherForm.reset();
+
+                loadRoster();
+
+            }
+
+
+        }
+
+
+        catch(error){
+
+
+            console.log(error);
+
+            alert("Unable to create teacher");
+
+
+        }
+
+
+    });
+
+
+}
+
+
+// ================= ADD STUDENT =================
+
+const addStudentForm = document.getElementById(
+    "addStudentForm"
+);
+
+
+if(addStudentForm){
+
+
+    addStudentForm.addEventListener("submit", async (e) => {
+
+
+        e.preventDefault();
+
+
+        const username = document.getElementById(
+            "studentUsername"
+        ).value.trim();
+
+
+        const email = document.getElementById(
+            "studentEmail"
+        ).value.trim();
+
+
+        const password = document.getElementById(
+            "studentPassword"
+        ).value;
+
+
+        try{
+
+
+            const response = await fetch(
+
+                "/admin/create-student",
+
+                {
+
+                    method:"POST",
+
+                    headers:{"Content-Type":"application/json"},
+
+                    credentials:"include",
+
+                    body:JSON.stringify({username, email, password})
+
+                }
+
+            );
+
+
+            const result = await response.json();
+
+
+            alert(result.message);
+
+
+            if(result.success){
+
+                addStudentForm.reset();
+
+                loadRoster();
+
+            }
+
+
+        }
+
+
+        catch(error){
+
+
+            console.log(error);
+
+            alert("Unable to create student");
+
+
+        }
+
+
+    });
+
+
+}
 

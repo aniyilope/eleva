@@ -23,7 +23,9 @@ body {
     color:#0f172a;
 
 }
-
+a{
+    text-decoration: none;
+}
 .sidebar {
 
 

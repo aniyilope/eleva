@@ -1625,29 +1625,43 @@ async function callStudent(socketId, name) {
 
     pc.onconnectionstatechange = () => {
 
+    console.log(
+        "Student:",
+        name,
+        "connectionState:",
+        pc.connectionState
+    );
+
+    console.log(
+        "ICE state:",
+        pc.iceConnectionState
+    );
+
+    console.log(
+        "ICE gathering:",
+        pc.iceGatheringState
+    );
+
+    console.log(
+        "Signaling:",
+        pc.signalingState
+    );
+
+    if (
+        pc.connectionState === "failed" ||
+        pc.connectionState === "closed" ||
+        pc.connectionState === "disconnected"
+    ) {
+
         console.log(
-            name,
-            "connection:",
-            pc.connectionState
+            "WebRTC connection failed for:",
+            socketId
         );
 
-        if (
-            pc.connectionState === "failed" ||
-            pc.connectionState === "closed" ||
-            pc.connectionState ===
-                "disconnected"
-        ) {
+        
+    }
 
-            removeParticipantTile(
-                socketId
-            );
-
-            delete peerConnections[
-                socketId
-            ];
-        }
-    };
-
+};
     try {
 
         const offer =

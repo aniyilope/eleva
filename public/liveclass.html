@@ -444,6 +444,14 @@ socket.on("student-ready-for-video", async ({ socketId, name }) => {
   const pc = new RTCPeerConnection(rtcConfig);
   peerConnections[socketId] = pc;
 
+
+  pc.oniceconnectionstatechange = () => {
+    console.log(
+        "ICE connection:",
+        name,
+        pc.iceConnectionState
+    );
+};
   const tile = addParticipant(name, "student", null);
   participantTiles[socketId] = tile;
 

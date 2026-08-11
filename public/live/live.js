@@ -58,7 +58,8 @@ const rtcConfig = {
             username: "openrelayproject",
             credential: "openrelayproject"
         }
-    ]
+    ],
+    iceTransportPolicy: "all"
 };
 
 function initLiveCore(role, username, userId) {
@@ -1384,20 +1385,17 @@ socket.on("answer", async data => {
             return;
         }
 
-        await pc.setRemoteDescription(
-            data.answer
-        );
+       await pc.setRemoteDescription(data.answer);
 
-        await flushIceCandidates(
-            pc,
-            data.from
-        );
+await flushIceCandidates(
+    pc,
+    data.from
+);
 
-        console.log(
-            "Student answer received:",
-            data.from
-        );
-
+console.log(
+    "Student answer received:",
+    data.from
+);
     } catch (err) {
 
         console.error(

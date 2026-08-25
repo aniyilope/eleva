@@ -4,8 +4,8 @@
 :root{
   --bg:#f4f6f9;
   --surface:#ffffff;
-  --primary:#0f2a44;     /* institutional navy */
-  --accent:#2563eb;     /* controlled blue */
+  --primary:#0f2a44;     
+  --accent:#2563eb;     
   --text:#111827;
   --muted:#6b7280;
   --border:#e6e8ec;
@@ -123,9 +123,7 @@ main{
   padding:32px;
 }
 
-/* ==========================
-   DASHBOARD METRICS
-========================== */
+
 .dashboard-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(240px,1fr));
@@ -153,9 +151,7 @@ main{
   color:var(--primary);
 }
 
-/* ==========================
-   SECTIONS
-========================== */
+
 .section{
   margin-top:40px;
 }
@@ -167,15 +163,12 @@ main{
   color:var(--primary);
 }
 
-/* ==========================
-   TABLE
-========================== */
 table{
   width:100%;
   border-collapse:collapse;
-  background:va
+  
 }
-/* LIVE STATUS */
+
 .live-status{
   font-size:12px;
   padding:6px 14px;
@@ -220,4 +213,101 @@ body.dark .sidebar a:hover{
   font-size:14px;
   cursor:pointer;
   color:white;
+}
+
+/* ==========================
+   RESPONSIVE BREAKPOINTS
+========================== */
+
+/* Tablet: shrink sidebar, tighten spacing */
+@media (max-width: 1024px){
+  :root{
+    --sidebar-w:210px;
+  }
+  main{
+    padding:24px;
+  }
+  header{
+    padding:0 20px;
+  }
+}
+
+
+
+/* Phone: stack everything, full-width cards, comfortable tap targets */
+@media (max-width: 480px){
+  
+.sidebar{
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:5px 0;
+}
+.sidebar a{
+  display:flex;
+  align-items:center;
+  padding:12px 10px;
+  text-decoration:none;
+  font-size:10px;
+  color:var(--text);
+  transition:background .2s ease, color .2s ease;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  display:grid;
+  grid-template-columns:150px 1fr;
+  grid-template-rows:68px 1fr;
+  min-height:100vh;
+}
+.dashboard-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+  gap:24px;
+}
+
+.card{
+  background:var(--surface);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:14px;
+}
+.section{
+  margin-top:40px;
+}
+
+.section h2{
+  font-size:15px;
+  font-weight:600;
+  margin-bottom:18px;
+  color:var(--primary);
+}
+logo{
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.3px;
+  color:var(--primary);
+}
+
+.user-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+#username{
+  font-size:10px;
+  color: #000000;
+  /* color:var(--muted); */
+}
+
+#logoutBtn{
+  background:red;
+  border:1px solid var(--border);
+  padding:8px 16px;
+  border-radius:8px;
+  font-size:12px;
+  cursor:pointer;
+  color:white;
+}
+
 }

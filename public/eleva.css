@@ -119,7 +119,6 @@ backdrop-filter:blur(18px);
 
 background:rgba(9,13,30,.65);
 
-/* border-bottom:1px solid rgba(255,255,255,.08); */
 
 }
 
@@ -141,7 +140,6 @@ padding:0 10px;
 
 }
 
-/* logo */
 
 .first h1{
 
@@ -149,12 +147,8 @@ font-size:30px;
 
 font-weight:700;
 
-background:linear-gradient(
-90deg,
-#7C3AED,
-#3B82F6,
-#06B6D4
-);
+background-color:#06B6D4;
+
 
 -webkit-background-clip:text;
 
@@ -192,33 +186,11 @@ position:relative;
 
 }
 
-nav a::after{
 
-content:"";
-
-position:absolute;
-
-left:0;
-
-bottom:-8px;
-
-height:2px;
-
-width:0;
-
-background:linear-gradient(
-90deg,
-#7C3AED,
-#06B6D4
-);
-
-transition:.35s;
-
-}
 
 nav a:hover{
 
-color:white;
+color:#3B82F6;
 
 }
 
@@ -246,11 +218,7 @@ font-weight:600;
 
 cursor:pointer;
 
-background:linear-gradient(
-135deg,
-#7C3AED,
-#3B82F6
-);
+background-color:#3B82F6;
 
 color:white;
 
@@ -550,7 +518,7 @@ font-weight:600;
 
 cursor:pointer;
 
-background:linear-gradient(135deg,#7C3AED,#3B82F6);
+background:#7C3AED;
 
 color:white;
 
@@ -617,7 +585,7 @@ width:100px;
 
 height:100px;
 
-background:linear-gradient(135deg,#7C3AED,#06B6D4);
+background:#7C3AED;
 
 top:-80px;
 
@@ -633,9 +601,9 @@ transition:.4s;
 
 .carousel-item:hover{
 
-transform:translateY(-15px);
 
-border-color:#7C3AED;
+
+/* border-color:#7C3AED; */
 
 box-shadow:0 25px 60px rgba(0,0,0,.35);
 
@@ -687,9 +655,8 @@ height:5px;
 background:linear-gradient(
 90deg,
 #7C3AED,
-#3B82F6,
-#06B6D4,
-#F97316
+#3B82F6
+
 );
 
 }
@@ -710,7 +677,7 @@ background:#09111f;
 
 ::-webkit-scrollbar-thumb{
 
-background:linear-gradient(#7C3AED,#06B6D4);
+background:#7C3AED;
 
 border-radius:20px;
 
@@ -786,11 +753,9 @@ font-size:34px;
 
 margin-bottom:18px;
 
-background:linear-gradient(
-90deg,
-#7C3AED,
+background:
 #06B6D4
-);
+;
 
 -webkit-background-clip:text;
 
@@ -800,9 +765,9 @@ color:transparent;
 
 .footer-section h4{
 
-margin-bottom:18px;
+margin-bottom:10px;
 
-font-size:20px;
+font-size:10px;
 
 color:white;
 
@@ -814,7 +779,7 @@ color:#CBD5E1;
 
 line-height:1.9;
 
-font-size:15px;
+font-size:12px;
 
 }
 
@@ -880,17 +845,7 @@ transition:.35s;
 
 }
 
-.social-links a:hover{
 
-transform:translateY(-8px);
-
-background:linear-gradient(
-135deg,
-#7C3AED,
-#3B82F6
-);
-
-}
 
 .footer-bottom{
 
@@ -1101,11 +1056,9 @@ color:#06B6D4;
         border: none;
         border-radius: 10px;
 
-        background: linear-gradient(
-            135deg,
-            #7C3AED,
+        background: 
             #3B82F6
-        );
+        ;
 
         color: white;
         font-size: 21px;
